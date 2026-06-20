@@ -23,7 +23,7 @@ class TransferSession:
         self._provider = provider
         self._file_metadata = file_metadata
         self._pending_chunks: set = set(range(file_metadata.chunk_count))
-        self._received_chunks: dict = {}
+        self._received_chunks: dict = {} # maps chunk_index -> ChunkData; filled progressively as chunks are verified at the end.
         self._retry_count: int = 0
 
     # --- Read-only properties ---
