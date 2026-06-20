@@ -27,9 +27,9 @@ class ChunkData:
             raise TypeError('data must be bytes or bytearray')
         self._file_hash = file_hash
         self._chunk_index = chunk_index
-        self._data = bytes(data)
+        self._data = bytes(data) # convert to immutable bytes so the stored data can never be modified after construction
                 self._checksum = hashlib.sha256(self._data).hexdigest() # SHA-256 computed once at construction and stored; verify() recomputes it later
-        # convert to immutable bytes so the stored data can never be modified after construction
+        
 
     
     # --- Factory for corruption simulation (internal use) ---
