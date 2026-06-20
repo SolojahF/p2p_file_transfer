@@ -68,6 +68,9 @@ The `@functools.total_ordering` decorator reduces this duplication. We only defi
 
 This follows the DRY (Don't Repeat Yourself) principle and still provides full support for operations such as `sorted()`, `min()`, and `max()`.
 
+### 12. Why bytes Is Used Instead of bytearray in ChunkData
+
+In `ChunkData.__init__`, incoming data is stored as `self._data = bytes(data)` even though the parameter accepts both `bytes` and `bytearray`. This conversion is intentional. `bytearray` is mutable - any code holding a reference to it could modify the contents after the SHA-256 checksum has already been computed, silently breaking the integrity guarantee. `bytes` is immutable in Python: once created, its contents can never change. By converting to `bytes` in the constructor, `ChunkData` ensures that `self._data` and `self._checksum` are always consistent for the entire lifetime of the object. This is encapsulation combined with Python's immutability guarantee (Week 2).
 
 ### 15. Why sorted() Is Used in reassemble()
 
