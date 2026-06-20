@@ -1,0 +1,221 @@
+@startuml P2P_File_Transfer_System
+
+skinparam classAttributeIconSize 0
+skinparam style strictuml
+
+' ── Exceptions ──────────────────────────────────────────────────────────────
+class P2PError <<exception>> {
+}
+class ChecksumMismatchError <<exception>> {
+    +file_hash : str
+    +chunk_idx : int
+    +expected : str
+    +received : str
+}
+class PeerNotFoundError <<exception>> {
+    +file_hash : str
+    +detail : str
+}
+class TransferTimeoutError <<exception>> {
+    +session_id : str
+    +chunk_idx : int
+}
+class DuplicateFileError <<exception>> {
+    +file_hash : str
+    +filename : str
+}
+
+P2PError <|-- ChecksumMismatchError
+P2PError <|-- PeerNotFoundError
+P2PError <|-- TransferTimeoutError
+P2PError <|-- DuplicateFileError
+
+' ── Core data classes ────────────────────────────────────────────────────────
+class ChunkData {
+    -_file_hash : str
+    -_chunk_index : int
+    -_data : bytes
+    -_checksum : str
+    +file_hash : str <<property>>
+    +chunk_index : int <<property>>
+    +data : bytes <<property>>
+    +checksum : str <<property>>
+    +verify() : bool
+    +{static} _from_raw(file_hash, chunk_index, data, checksum) : ChunkData
+    +__str__() : str
+    +__repr__() : str
+}
+
+class FileMetadata <<@total_ordering>> {
+    -_filename : str
+    -_size_bytes : int
+    -_sha256_hash : str
+    -_chunk_size_bytes : int
+    -_chunk_count : int
+    +filename : str <<property>>
+    +size_bytes : int <<property>>
+    +sha256_hash : str <<property>>
+    +chunk_count : int <<property>>
+    +chunk_size_bytes : int <<property>>
+    +__eq__(other) : bool
+    +__lt__(other) : bool
+    +__hash__() : int
+    +__str__() : str
+    +__repr__() : str
+}
+
+class Swarm {
+    -_file_hash : str
+    -_peers : set
+    +file_hash : str <<property>>
+    +add_peer(peer) : None
+    +remove_peer(peer) : None
+    +peers_list() : list
+    +__len__() : int
+    +__contains__(item) : bool
+    +__iter__()
+    +__str__() : str
+    +__repr__() : str
+}
+
+class TransferSession {
+    -_session_id : str
+    -_requester : Node
+    -_provider : Node
+    -_file_metadata : FileMetadata
+    -_pending_chunks : set
+    -_received_chunks : dict
+    -_retry_count : int
+    +session_id : str <<property>>
+    +requester <<property>>
+    +provider <<property>>
+    +file_metadata <<property>>
+    +pending_chunks : set <<property>>
+    +received_chunks : dict <<property>>
+    +retry_count : int <<property>>
+    +progress_pct : float <<property>>
+    +set_provider(provider) : None
+    +mark_received(chunk_data) : None
+    +increment_retry() : None
+    +is_complete() : bool
+    +reassemble() : bytes
+    +__str__() : str
+    +__repr__() : str
+}
+
+' ── Node hierarchy ───────────────────────────────────────────────────────────
+abstract class Node <<abstract>> {
+    #_node_id : str
+    #_address : str
+    +node_id : str <<property>>
+    +address : str <<property>>
+    +{abstract} send(message: dict) : dict
+    +{abstract} receive() : dict
+    +__str__() : str
+    +__repr__() : str
+}
+
+class RateLimiterMixin {
+    -_max_bw : int
+    -_bytes_this_second : int
+    +max_bandwidth_bps : int <<property>>
+    +bytes_sent_this_second : int <<property>>
+    +can_send(byte_count: int) : bool
+    +record_sent(byte_count: int) : None
+    +reset_bandwidth() : None
+}
+
+class DataPeerNode {
+    -_bandwidth : float
+    -_local_files : dict
+    -_inbox : list
+    +bandwidth : float <<property>>
+    +local_files : dict <<property>>
+    +share_file(data, name, chunk_size) : FileMetadata
+    +request_chunk(file_hash, chunk_idx) : ChunkData
+    +has_file(file_hash) : bool
+    +send(message: dict) : dict
+    +receive() : dict
+}
+
+class MetadataTrackerNode {
+    -_swarms : dict
+    -_inbox : list
+    +register_file(metadata, peer) : None
+    +find_peers(file_hash, limit) : list
+    +get_swarm(file_hash) : Swarm
+    +send(message: dict) : dict
+    +receive() : dict
+}
+
+class SeedNode {
+    +request_chunk(file_hash, chunk_idx) : ChunkData
+}
+
+Node <|-- DataPeerNode
+Node <|-- MetadataTrackerNode
+DataPeerNode <|-- SeedNode
+RateLimiterMixin <|-- SeedNode
+
+' ── Protocol hierarchy ───────────────────────────────────────────────────────
+abstract class TransferProtocol <<abstract>> {
+    -_corruption_probability : float
+    +corruption_probability : float <<property>>
+    +{abstract} initiate(session) : bool
+    +{abstract} transfer_chunk(session, idx, provider) : ChunkData
+    +{abstract} finalise(session) : bool
+    #_maybe_corrupt(chunk) : ChunkData
+    #{static} _verify_whole_file(session) : bool
+    +__str__() : str
+    +__repr__() : str
+}
+
+class PushProtocol {
+    +initiate(session) : bool
+    +transfer_chunk(session, idx, provider) : ChunkData
+    +finalise(session) : bool
+}
+
+class PullProtocol {
+    +initiate(session) : bool
+    +transfer_chunk(session, idx, provider) : ChunkData
+    +finalise(session) : bool
+}
+
+TransferProtocol <|-- PushProtocol
+TransferProtocol <|-- PullProtocol
+
+' ── Relationships ─────────────────────────────────────────────────────────────
+' Composition: TransferSession owns its pending/received chunk collections
+TransferSession *-- "0..*" ChunkData : received_chunks
+
+' Aggregation: TransferSession references FileMetadata (independently created)
+TransferSession o-- "1" FileMetadata : file_metadata
+
+' Aggregation: TransferSession references Nodes (independently created)
+TransferSession o-- "1" Node : requester
+TransferSession o-- "1" Node : provider
+
+' Composition: DataPeerNode owns its ChunkData arrays (lifecycle tied to peer)
+DataPeerNode *-- "0..*" ChunkData : local chunks
+
+' Aggregation: MetadataTrackerNode references Swarms
+MetadataTrackerNode o-- "0..*" Swarm : _swarms
+
+' Aggregation: Swarm references DataPeerNodes
+Swarm o-- "0..*" DataPeerNode : peers
+
+' Dependency: DataPeerNode creates FileMetadata on share_file()
+DataPeerNode ..> FileMetadata : <<creates>>
+
+' Dependency: Protocols use TransferSession during transfer
+TransferProtocol ..> TransferSession : <<uses>>
+TransferProtocol ..> ChunkData : <<creates/returns>>
+
+' Dependency: exceptions raised by multiple classes
+DataPeerNode ..> DuplicateFileError : <<raises>>
+DataPeerNode ..> PeerNotFoundError : <<raises>>
+MetadataTrackerNode ..> PeerNotFoundError : <<raises>>
+TransferProtocol ..> ChecksumMismatchError : <<raises>>
+
+@enduml
