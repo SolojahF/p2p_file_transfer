@@ -57,6 +57,15 @@ public interface only.
 ### 7. Why UUID4 Is Used for Session IDs
 
 `TransferSession` generates its `session_id` using `str(uuid.uuid4())`. UUID4 produces a 128-bit random identifier with a collision probability so low it is treated as zero in practice. We use UUID4 rather than a sequential counter (`session_count += 1`) because sequential IDs reveal how many sessions have run and are predictable. UUID4 IDs are opaque and unpredictable in a real distributed system, session IDs can be used for authentication, so predictability is a security risk. This also demonstrates correct use of Python's standard library `uuid` module as referenced in the project's Week 1-5 00P concepts.
+### 9. How @total_ordering Reduces Code Duplication
 
+Python requires six comparison methods for a fully ordered type:
+`__eq__`, `__ne__`, `__lt__`, `__le__`, `__gt__`, and `__ge__`.
+
+Writing all six for `FileMetadata` would mean repeating similar size-comparison logic several times.
+
+The `@functools.total_ordering` decorator reduces this duplication. We only define `__eq__` and `__lt__`, and Python automatically generates the remaining comparison methods.
+
+This follows the DRY (Don't Repeat Yourself) principle and still provides full support for operations such as `sorted()`, `min()`, and `max()`.
 
 
