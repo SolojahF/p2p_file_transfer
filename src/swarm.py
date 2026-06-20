@@ -47,7 +47,7 @@ index the peers.
     def __contains__(self, item) -> bool:
         """Support both peer_id string and peer object membership tests."""
         if isinstance(item, str):
-            return any(p.node_id == item for p in self._peers)
+            return any(p.node_id == item for p in self._peers) # linear scan through peers; acceptable because swarms are small
         return item in self._peers
 
     def __iter__(self):
