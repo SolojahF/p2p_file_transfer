@@ -23,7 +23,7 @@ class Swarm:
         return self._file_hash
 
     def add_peer(self, peer) -> None:
-        """Add a peer node to the swarm so it is discoverable by any peer looking to download the tracked file. Uses a set internally so the same peer cannot be added twice."""
+        """Add a peer node to the swarm."""
         self._peers.add(peer)
 
     def remove_peer(self, peer) -> None:
@@ -31,7 +31,12 @@ class Swarm:
         self._peers.discard(peer)
 
     def peers_list(self) -> list:
-        """Return a list of all peers in this swarm."""
+        """Return a snapshot list of all peers currently in this swarm.
+
+Converting from the internal set to a list makes the result safe to iterate
+while the swarm is modified concurrently, and allows the caller to sort or
+index the peers.
+"""
         return list(self._peers)
 
     # --- Dunder methods ---
