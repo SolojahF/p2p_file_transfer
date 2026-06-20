@@ -19,7 +19,7 @@ This project implements a Python OOP simulation of a simplified Peer-to-Peer (P2
 | _(Member 7 — fill in)_ | _(matric)_ | _(github)_ |
 | _(Member 8 — fill in)_ | _(matric)_ | _(github)_ |
 | _(Member 9 — fill in)_ | _(matric)_ | _(github)_ |
-| _(Member 10 — fill in)_ | _(matric)_ | _(github)_ |
+| Omoniyi abdul-muiz opeyemi  | CPE/2023/1094 | Softwork-gif |
 | _(Member 11 — fill in)_ | _(matric)_ | _(github)_ |
 | _(Member 12 — fill in)_ | _(matric)_ | _(github)_ |
 | _(Member 13 — fill in)_ | _(matric)_ | _(github)_ |
