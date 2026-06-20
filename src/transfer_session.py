@@ -83,7 +83,7 @@ class TransferSession:
         self._pending_chunks.discard(chunk_data.chunk_index)
 
     def increment_retry(self) -> None:
-        """Increment the retry counter by one."""
+        """Increment the retry counter by one each time a corrupted chunk must be re-requested from a different peer. The total is reported at the end of the transfer to measure how unreliable the network simulation was."""
         self._retry_count += 1
 
     def is_complete(self) -> bool:
