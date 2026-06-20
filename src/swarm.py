@@ -23,7 +23,7 @@ class Swarm:
         return self._file_hash
 
     def add_peer(self, peer) -> None:
-        """Add a peer node to the swarm."""
+        """Add a peer node to the swarm so it is discoverable by any peer looking to download the tracked file. Uses a set internally so the same peer cannot be added twice."""
         self._peers.add(peer)
 
     def remove_peer(self, peer) -> None:
