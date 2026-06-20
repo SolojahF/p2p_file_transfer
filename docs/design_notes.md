@@ -52,3 +52,11 @@ overwrite them - for example `chunk.data = b"tampered"` - which would silently i
 was computed on the original bytes. By using `@property` with no setter, the class enforces that attributes can only
 be read after construction. This is encapsulation (Week 2): hiding internal state and controlling access through a
 public interface only.
+
+---
+### 7. Why UUID4 Is Used for Session IDs
+
+`TransferSession` generates its `session_id` using `str(uuid.uuid4())`. UUID4 produces a 128-bit random identifier with a collision probability so low it is treated as zero in practice. We use UUID4 rather than a sequential counter (`session_count += 1`) because sequential IDs reveal how many sessions have run and are predictable. UUID4 IDs are opaque and unpredictable in a real distributed system, session IDs can be used for authentication, so predictability is a security risk. This also demonstrates correct use of Python's standard library `uuid` module as referenced in the project's Week 1-5 00P concepts.
+
+
+
