@@ -296,3 +296,5 @@ class SeedNode(DataPeerNode, RateLimiterMixin):
         chunk = super().request_chunk(file_hash, chunk_idx)
         self.record_sent(len(chunk.data))
         return chunk
+        self._bytes_this_second: int = 0
+reset to 0 each second via reset_bandwidth(); tracks outgoing bytes in current window
