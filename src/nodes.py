@@ -88,7 +88,7 @@ class RateLimiterMixin:
         return self._bytes_this_second
 
     def can_send(self, byte_count: int) -> bool:
-        """Return True if sending byte_count bytes stays within the bandwidth limit."""
+        """Return True if sending byte_count bytes stays within the per-second bandwidth limit. Callers should check this before calling record_sent() to avoid exceeding the configured max_bandwidth_bps cap."""
         return (self._bytes_this_second + byte_count) <= self._max_bw
 
     def record_sent(self, byte_count: int) -> None:
