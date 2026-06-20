@@ -185,7 +185,7 @@ class DataPeerNode(Node):
         return chunks[chunk_idx]
 
     def has_file(self, file_hash: str) -> bool:
-        """Return True if this peer holds the specified file."""
+        """Return True if this peer holds the specified file, looked up by SHA-256 hash so the check is content-based rather than filename-based. Two files with different names but identical content share the same hash and are treated as one file."""
         return file_hash in self._local_files
 
     def send(self, message: dict) -> dict:
